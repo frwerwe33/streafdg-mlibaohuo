@@ -2,7 +2,7 @@ name: Scheduled and Manual Docker Run
 
 on:
   schedule:
-    - cron: '0 23 * * 3,0'  # 定时任务
+    - cron: '0 * * * *'  # 定时任务
   workflow_dispatch:  
 
 jobs:
