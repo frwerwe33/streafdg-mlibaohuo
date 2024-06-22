@@ -16,6 +16,7 @@ jobs:
     - name: Set Environment Variables
       run: |
         echo "PW=${{ secrets.PW }}" >> $GITHUB_ENV
+        echo "ST_URL=${{ secrets.ST_URL }}" >> $GITHUB_ENV
         echo "AL_PW=${{ secrets.AL_PW }}" >> $GITHUB_ENV
         echo "AL_PW2=${{ secrets.AL_PW2 }}" >> $GITHUB_ENV
         echo "AL_PW3=${{ secrets.AL_PW3 }}" >> $GITHUB_ENV
@@ -28,6 +29,7 @@ jobs:
     - name: Debug
       run: |
         echo "PW: $PW"
+        echo "ST_URL: $ST_URL"
         echo "AL_PW: $AL_PW"
         echo "AL_PW2: $AL_PW2"
         echo "AL_PW3: $AL_PW3"
@@ -40,6 +42,7 @@ jobs:
     - name: Run Docker Container
       run: |
         docker run -e PW=$PW \
+                   -e ST_URL=$ST_URL \
                    -e AL_PW=$AL_PW \
                    -e AL_PW2=$AL_PW2 \
                    -e AL_PW3=$AL_PW3 \
