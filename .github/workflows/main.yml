@@ -1,0 +1,51 @@
+name: Scheduled and Manual Docker Run
+
+on:
+  schedule:
+    - cron: '0 23 * * 3,0'  # 定时任务
+  workflow_dispatch:  
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set Environment Variables
+      run: |
+        echo "PW=${{ secrets.PW }}" >> $GITHUB_ENV
+        echo "AL_PW=${{ secrets.AL_PW }}" >> $GITHUB_ENV
+        echo "AL_PW2=${{ secrets.AL_PW2 }}" >> $GITHUB_ENV
+        echo "AL_PW3=${{ secrets.AL_PW3 }}" >> $GITHUB_ENV
+        echo "KOY_EB=${{ secrets.KOY_EB }}" >> $GITHUB_ENV
+        echo "SEC_TION=${{ secrets.SEC_TION }}" >> $GITHUB_ENV
+        echo "SEG_PW=${{ secrets.SEG_PW }}" >> $GITHUB_ENV
+        echo "TG_ID=${{ secrets.TG_ID }}" >> $GITHUB_ENV
+        echo "TG_TOKEN=${{ secrets.TG_TOKEN }}" >> $GITHUB_ENV
+
+    - name: Debug
+      run: |
+        echo "PW: $PW"
+        echo "AL_PW: $AL_PW"
+        echo "AL_PW2: $AL_PW2"
+        echo "AL_PW3: $AL_PW3"
+        echo "KOY_EB: $KOY_EB"
+        echo "SEC_TION: $SEC_TION"
+        echo "SEG_PW: $SEG_PW"
+        echo "TG_ID: $TG_ID"
+        echo "TG_TOKEN: $TG_TOKEN"
+
+    - name: Run Docker Container
+      run: |
+        docker run -e PW=$PW \
+                   -e AL_PW=$AL_PW \
+                   -e AL_PW2=$AL_PW2 \
+                   -e AL_PW3=$AL_PW3 \
+                   -e KOY_EB=$KOY_EB \
+                   -e SEC_TION=$SEC_TION \
+                   -e SEG_PW=$SEG_PW \
+                   -e TG_ID=$TG_ID \
+                   -e TG_TOKEN=$TG_TOKEN \
+                   daxia2023/do:denglubaohuo2
