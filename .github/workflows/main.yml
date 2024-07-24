@@ -25,20 +25,6 @@ jobs:
         echo "SEG_PW=${{ secrets.SEG_PW }}" >> $GITHUB_ENV
         echo "TG_ID=${{ secrets.TG_ID }}" >> $GITHUB_ENV
         echo "TG_TOKEN=${{ secrets.TG_TOKEN }}" >> $GITHUB_ENV
-
-    - name: Debug
-      run: |
-        echo "PW: $PW"
-        echo "ST_URL: $ST_URL"
-        echo "AL_PW: $AL_PW"
-        echo "AL_PW2: $AL_PW2"
-        echo "AL_PW3: $AL_PW3"
-        echo "KOY_EB: $KOY_EB"
-        echo "SEC_TION: $SEC_TION"
-        echo "SEG_PW: $SEG_PW"
-        echo "TG_ID: $TG_ID"
-        echo "TG_TOKEN: $TG_TOKEN"
-
     - name: Run Docker Container
       run: |
         docker run -e PW=$PW \
