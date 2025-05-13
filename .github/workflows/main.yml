@@ -50,19 +50,49 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildx-
     
-    - name: Pull and cache Docker image
-      uses: docker/build-push-action@v4
-      with:
-        push: false
-        load: true
-        tags: daxia2023/do:denglubaohuo2
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-    - name: Move cache
+    - name: Pull Docker image
       run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+        echo "Pulling Docker image daxia2023/do:denglubaohuo2..."
+        docker pull daxia2023/do:denglubaohuo2
+        echo "Image pulled successfully"
+
+    # Docker image caching
+    - name: Cache Docker images
+      uses: actions/cache@v3
+      with:
+        path: /tmp/docker-cache
+        key: ${{ runner.os }}-docker-${{ hashFiles('**/workflow.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+          
+    - name: Load cached Docker image
+      id: cache-docker
+      continue-on-error: true
+      run: |
+        if [ -f /tmp/docker-cache/image.tar ]; then
+          echo "Loading Docker image from cache..."
+          docker load < /tmp/docker-cache/image.tar
+          echo "Docker image loaded from cache"
+          echo "cache-hit=true" >> $GITHUB_OUTPUT
+        else
+          echo "No cached Docker image found"
+          echo "cache-hit=false" >> $GITHUB_OUTPUT
+          mkdir -p /tmp/docker-cache
+        fi
+        
+    - name: Pull Docker image if not cached
+      if: steps.cache-docker.outputs.cache-hit != 'true'
+      run: |
+        echo "Pulling Docker image daxia2023/do:denglubaohuo2..."
+        docker pull daxia2023/do:denglubaohuo2
+        echo "Image pulled successfully"
+        
+    - name: Save Docker image to cache
+      if: steps.cache-docker.outputs.cache-hit != 'true'
+      run: |
+        echo "Saving Docker image to cache..."
+        docker save daxia2023/do:denglubaohuo2 > /tmp/docker-cache/image.tar
+        echo "Docker image saved to cache"
           
     - name: Run Docker Container
       shell: bash
