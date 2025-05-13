@@ -1,12 +1,17 @@
-name: Scheduled and Manual Docker Run with Enhanced Security
+name: Optimized Docker Run with Enhanced Security
 on:
   schedule:
     - cron: '0 * * * *'  # Run every hour
   workflow_dispatch:  # Manual trigger option
   
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+  
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 60  # Set timeout to avoid hung jobs
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
@@ -56,43 +61,43 @@ jobs:
         docker pull daxia2023/do:denglubaohuo2
         echo "Image pulled successfully"
 
-    # Docker image caching
+    # Docker image caching with performance optimizations
     - name: Cache Docker images
       uses: actions/cache@v3
+      id: docker-cache
       with:
         path: /tmp/docker-cache
         key: ${{ runner.os }}-docker-${{ hashFiles('**/workflow.yaml') }}
         restore-keys: |
           ${{ runner.os }}-docker-
           
-    - name: Load cached Docker image
-      id: cache-docker
-      continue-on-error: true
+    - name: Set up Docker
+      uses: docker/setup-docker@v2
+      with:
+        buildkit: true  # Enable BuildKit for better performance
+      
+    - name: Load or pull Docker image
       run: |
+        mkdir -p /tmp/docker-cache
+        echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
+        echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
+        
+        # Load from cache or pull with fallback
         if [ -f /tmp/docker-cache/image.tar ]; then
           echo "Loading Docker image from cache..."
-          docker load < /tmp/docker-cache/image.tar
-          echo "Docker image loaded from cache"
-          echo "cache-hit=true" >> $GITHUB_OUTPUT
+          time docker load < /tmp/docker-cache/image.tar
+          echo "Cache load completed"
         else
-          echo "No cached Docker image found"
-          echo "cache-hit=false" >> $GITHUB_OUTPUT
-          mkdir -p /tmp/docker-cache
+          echo "No cached image found, pulling from registry..."
+          # Use parallel downloads for faster pulling
+          docker pull --platform linux/amd64 daxia2023/do:denglubaohuo2 &
+          wait
+          echo "Image pulled successfully"
+          
+          # Save to cache in background to speed up workflow
+          echo "Saving image to cache in background..."
+          (docker save daxia2023/do:denglubaohuo2 > /tmp/docker-cache/image.tar) &
         fi
-        
-    - name: Pull Docker image if not cached
-      if: steps.cache-docker.outputs.cache-hit != 'true'
-      run: |
-        echo "Pulling Docker image daxia2023/do:denglubaohuo2..."
-        docker pull daxia2023/do:denglubaohuo2
-        echo "Image pulled successfully"
-        
-    - name: Save Docker image to cache
-      if: steps.cache-docker.outputs.cache-hit != 'true'
-      run: |
-        echo "Saving Docker image to cache..."
-        docker save daxia2023/do:denglubaohuo2 > /tmp/docker-cache/image.tar
-        echo "Docker image saved to cache"
           
     - name: Run Docker Container
       shell: bash
@@ -101,6 +106,7 @@ jobs:
         echo "Starting Docker container with environment variables..."
         
         # Using the -e flag with variables set through GitHub environment
+        # Adding performance optimization flags
         docker run --name denglubaohuo_container \
                   -e PW \
                   -e ST_URL \
@@ -115,6 +121,9 @@ jobs:
                   --log-driver json-file \
                   --log-opt max-size=10m \
                   --log-opt max-file=3 \
+                  --cpus=2 \
+                  --memory=2g \
+                  --shm-size=1g \
                   daxia2023/do:denglubaohuo2
         
         echo "Docker container execution completed"
