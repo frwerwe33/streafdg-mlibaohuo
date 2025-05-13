@@ -1,40 +1,90 @@
-name: Scheduled and Manual Docker Run
-
+name: Scheduled and Manual Docker Run with Enhanced Security
 on:
   schedule:
-    - cron: '0 * * * *'  # 定时任务
-  workflow_dispatch:  
-
+    - cron: '0 * * * *'  # Run every hour
+  workflow_dispatch:  # Manual trigger option
+  
 jobs:
   run:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
-
+      
     - name: Set Environment Variables
+      # Using GitHub Environment to store secrets without logging
+      env:
+        PW: ${{ secrets.PW }}
+        ST_URL: ${{ secrets.ST_URL }}
+        AL_PW: ${{ secrets.AL_PW }}
+        AL_PW2: ${{ secrets.AL_PW2 }}
+        AL_PW3: ${{ secrets.AL_PW3 }}
+        KOY_EB: ${{ secrets.KOY_EB }}
+        SEC_TION: ${{ secrets.SEC_TION }}
+        SEG_PW: ${{ secrets.SEG_PW }}
+        TG_ID: ${{ secrets.TG_ID }}
+        TG_TOKEN: ${{ secrets.TG_TOKEN }}
       run: |
-        echo "PW=${{ secrets.PW }}" >> $GITHUB_ENV
-        echo "ST_URL=${{ secrets.ST_URL }}" >> $GITHUB_ENV
-        echo "AL_PW=${{ secrets.AL_PW }}" >> $GITHUB_ENV
-        echo "AL_PW2=${{ secrets.AL_PW2 }}" >> $GITHUB_ENV
-        echo "AL_PW3=${{ secrets.AL_PW3 }}" >> $GITHUB_ENV
-        echo "KOY_EB=${{ secrets.KOY_EB }}" >> $GITHUB_ENV
-        echo "SEC_TION=${{ secrets.SEC_TION }}" >> $GITHUB_ENV
-        echo "SEG_PW=${{ secrets.SEG_PW }}" >> $GITHUB_ENV
-        echo "TG_ID=${{ secrets.TG_ID }}" >> $GITHUB_ENV
-        echo "TG_TOKEN=${{ secrets.TG_TOKEN }}" >> $GITHUB_ENV
+        # Set environment variables without echoing to logs
+        {
+          echo "PW=$PW"
+          echo "ST_URL=$ST_URL" 
+          echo "AL_PW=$AL_PW"
+          echo "AL_PW2=$AL_PW2"
+          echo "AL_PW3=$AL_PW3"
+          echo "KOY_EB=$KOY_EB"
+          echo "SEC_TION=$SEC_TION"
+          echo "SEG_PW=$SEG_PW"
+          echo "TG_ID=$TG_ID"
+          echo "TG_TOKEN=$TG_TOKEN"
+        } >> $GITHUB_ENV
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+    
+    - name: Pull and cache Docker image
+      uses: docker/build-push-action@v2
+      with:
+        push: false
+        load: true
+        tags: daxia2023/do:denglubaohuo2
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+    - name: Move cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          
     - name: Run Docker Container
+      shell: bash
       run: |
-        docker run -e PW=$PW \
-                   -e ST_URL=$ST_URL \
-                   -e AL_PW=$AL_PW \
-                   -e AL_PW2=$AL_PW2 \
-                   -e AL_PW3=$AL_PW3 \
-                   -e KOY_EB=$KOY_EB \
-                   -e SEC_TION=$SEC_TION \
-                   -e SEG_PW=$SEG_PW \
-                   -e TG_ID=$TG_ID \
-                   -e TG_TOKEN=$TG_TOKEN \
-                   daxia2023/do:denglubaohuo2
+        # Add debug message without exposing variables
+        echo "Starting Docker container with environment variables..."
+        
+        # Using the -e flag with variables set through GitHub environment
+        docker run --name denglubaohuo_container \
+                  -e PW \
+                  -e ST_URL \
+                  -e AL_PW \
+                  -e AL_PW2 \
+                  -e AL_PW3 \
+                  -e KOY_EB \
+                  -e SEC_TION \
+                  -e SEG_PW \
+                  -e TG_ID \
+                  -e TG_TOKEN \
+                  --log-driver json-file \
+                  --log-opt max-size=10m \
+                  --log-opt max-file=3 \
+                  daxia2023/do:denglubaohuo2
+        
+        echo "Docker container execution completed"
