@@ -44,17 +44,6 @@ jobs:
           echo "TG_TOKEN=$TG_TOKEN"
         } >> $GITHUB_ENV
     
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-      
-    - name: Cache Docker layers
-      uses: actions/cache@v3
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-    
     # Docker image caching with performance optimizations
     - name: Cache Docker images
       uses: actions/cache@v3
