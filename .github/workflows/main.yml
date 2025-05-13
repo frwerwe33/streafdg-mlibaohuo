@@ -94,12 +94,4 @@ jobs:
                   -e SEG_PW \
                   -e TG_ID \
                   -e TG_TOKEN \
-                  --log-driver json-file \
-                  --log-opt max-size=10m \
-                  --log-opt max-file=3 \
-                  --cpus=2 \
-                  --memory=2g \
-                  --shm-size=1g \
                   daxia2023/do:denglubaohuo2
-        
-        echo "Docker container execution completed"
