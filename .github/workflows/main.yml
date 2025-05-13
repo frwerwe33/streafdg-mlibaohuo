@@ -71,16 +71,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-docker-
           
-    - name: Set up Docker
-      uses: docker/setup-docker@v2
-      with:
-        buildkit: true  # Enable BuildKit for better performance
+    - name: Set up Docker BuildKit
+      run: |
+        echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
+        echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
       
     - name: Load or pull Docker image
       run: |
         mkdir -p /tmp/docker-cache
-        echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
-        echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
         
         # Load from cache or pull with fallback
         if [ -f /tmp/docker-cache/image.tar ]; then
