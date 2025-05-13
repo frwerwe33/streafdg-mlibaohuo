@@ -53,12 +53,7 @@ jobs:
         key: ${{ runner.os }}-docker-${{ hashFiles('**/workflow.yaml') }}
         restore-keys: |
           ${{ runner.os }}-docker-
-          
-    - name: Set up Docker BuildKit
-      run: |
-        echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
-        echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
-      
+
     - name: Load or pull Docker image
       run: |
         mkdir -p /tmp/docker-cache
