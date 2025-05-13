@@ -55,12 +55,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildx-
     
-    - name: Pull Docker image
-      run: |
-        echo "Pulling Docker image daxia2023/do:denglubaohuo2..."
-        docker pull daxia2023/do:denglubaohuo2
-        echo "Image pulled successfully"
-
     # Docker image caching with performance optimizations
     - name: Cache Docker images
       uses: actions/cache@v3
