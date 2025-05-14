@@ -1,97 +1,95 @@
-name: Optimized Docker Run with Enhanced Security
+name: strea-Keepalive
 on:
   schedule:
     - cron: '0 * * * *'  # Run every hour
   workflow_dispatch:  # Manual trigger option
-  
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-  
-jobs:
-  run:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60  # Set timeout to avoid hung jobs
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-      
-    - name: Set Environment Variables
-      # Using GitHub Environment to store secrets without logging
-      env:
-        PW: ${{ secrets.PW }}
-        ST_URL: ${{ secrets.ST_URL }}
-        AL_PW: ${{ secrets.AL_PW }}
-        AL_PW2: ${{ secrets.AL_PW2 }}
-        AL_PW3: ${{ secrets.AL_PW3 }}
-        KOY_EB: ${{ secrets.KOY_EB }}
-        SEC_TION: ${{ secrets.SEC_TION }}
-        SEG_PW: ${{ secrets.SEG_PW }}
-        TG_ID: ${{ secrets.TG_ID }}
-        TG_TOKEN: ${{ secrets.TG_TOKEN }}
-      run: |
-        # Set environment variables without echoing to logs
-        {
-          echo "PW=$PW"
-          echo "ST_URL=$ST_URL" 
-          echo "AL_PW=$AL_PW"
-          echo "AL_PW2=$AL_PW2"
-          echo "AL_PW3=$AL_PW3"
-          echo "KOY_EB=$KOY_EB"
-          echo "SEC_TION=$SEC_TION"
-          echo "SEG_PW=$SEG_PW"
-          echo "TG_ID=$TG_ID"
-          echo "TG_TOKEN=$TG_TOKEN"
-        } >> $GITHUB_ENV
-    
-    # Docker image caching with performance optimizations
-    - name: Cache Docker images
-      uses: actions/cache@v3
-      id: docker-cache
-      with:
-        path: /tmp/docker-cache
-        key: ${{ runner.os }}-docker-${{ hashFiles('**/workflow.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
 
-    - name: Load or pull Docker image
-      run: |
-        mkdir -p /tmp/docker-cache
+jobs:
+  keepalive:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
         
-        # Load from cache or pull with fallback
-        if [ -f /tmp/docker-cache/image.tar ]; then
-          echo "Loading Docker image from cache..."
-          time docker load < /tmp/docker-cache/image.tar
-          echo "Cache load completed"
-        else
-          echo "No cached image found, pulling from registry..."
-          # Use parallel downloads for faster pulling
-          docker pull --platform linux/amd64 daxia2023/do:denglubaohuo2 &
-          wait
-          echo "Image pulled successfully"
+    - name: Restore pip cache
+      id: cache-pip
+      uses: actions/cache/restore@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
           
-          # Save to cache in background to speed up workflow
-          echo "Saving image to cache in background..."
-          (docker save daxia2023/do:denglubaohuo2 > /tmp/docker-cache/image.tar) &
+    - name: Restore Playwright cache
+      id: cache-playwright
+      uses: actions/cache/restore@v3
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/playwright.version') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+          
+    - name: Create playwright.version file if not exists
+      run: |
+        if [ ! -f "playwright.version" ]; then
+          playwright_version=$(pip show playwright 2>/dev/null | grep Version | cut -d ' ' -f 2 || echo "1.34.0")
+          echo "$playwright_version" > playwright.version
         fi
-          
-    - name: Run Docker Container
-      shell: bash
+    
+    - name: Install dependencies
       run: |
-        # Add debug message without exposing variables
-        echo "Starting Docker container with environment variables..."
+        python -m pip install --upgrade pip
         
-        # Using the -e flag with variables set through GitHub environment
-        # Adding performance optimization flags
-        docker run --name denglubaohuo_container \
-                  -e PW \
-                  -e ST_URL \
-                  -e AL_PW \
-                  -e AL_PW2 \
-                  -e AL_PW3 \
-                  -e KOY_EB \
-                  -e SEC_TION \
-                  -e SEG_PW \
-                  -e TG_ID \
-                  -e TG_TOKEN \
-                  daxia2023/do:denglubaohuo2
+        # Always install playwright explicitly to ensure it's available
+        pip install playwright
+        
+        # Install from requirements.txt if it exists
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        
+        # Verify playwright is installed correctly
+        python -c "import playwright; print('Playwright successfully imported')"
+        
+        # Only install Playwright browsers if cache doesn't exist
+        if [ "${{ steps.cache-playwright.outputs.cache-hit }}" != 'true' ]; then
+          echo "Installing Playwright browsers..."
+          python -m playwright install firefox
+        else
+          echo "Using cached Playwright browsers"
+        fi
+      
+    - name: Run Python Script
+      env:
+        ST_URL: ${{ secrets.ST_URL }}
+        PYTHONPATH: $PYTHONPATH:$(pwd)
+      run: |
+        # Print Python environment info for debugging
+        which python
+        python -V
+        echo "PYTHONPATH: $PYTHONPATH"
+        
+        # Verify modules are accessible
+        python -m pip list | grep playwright
+        
+        # Run the script with explicit Python path
+        python -m main
+        
+       
+    - name: Save pip cache
+      uses: actions/cache/save@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        
+    - name: Save Playwright cache
+      uses: actions/cache/save@v3
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/playwright.version') }}
