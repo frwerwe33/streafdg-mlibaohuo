@@ -44,7 +44,7 @@ def run(playwright: Playwright) -> None:
     browser = None
     context = None
     try:
-        browser = playwright.firefox.launch(headless=False)
+        browser = playwright.firefox.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
 
