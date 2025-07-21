@@ -5,15 +5,15 @@ on:
   workflow_dispatch:
     inputs:
       website_url:
-        description: '被检查网站的URL'
+        description: '±»јмІйНшХѕµДURL'
         required: true
         type: string
       status_code:
-        description: '从网站获取的状态码'
+        description: 'ґУНшХѕ»сИЎµДЧґМ¬Вл'
         required: true
         type: string
       timestamp:
-        description: '检查发生时的时间戳'
+        description: 'јмІй·ўЙъК±µДК±јдґБ'
         required: true
         type: string
 
@@ -77,6 +77,11 @@ jobs:
         else
           echo "Using cached Playwright browsers"
         fi
+
+    - name: Record start time
+      run: |
+        echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+        echo "开始时间: $(date '+%Y-%m-%d %H:%M:%S UTC')"
       
     - name: Run Python Script
       env:
@@ -93,6 +98,40 @@ jobs:
         
         # Run the script with explicit Python path
         python -m main
+
+    - name: Record execution time and commit
+      run: |
+        # Calculate execution time
+        END_TIME=$(date +%s)
+        EXECUTION_TIME=$((END_TIME - START_TIME))
+        
+        # Format execution time
+        MINUTES=$((EXECUTION_TIME / 60))
+        SECONDS=$((EXECUTION_TIME % 60))
+        
+        # Create time record with timestamp
+        TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S UTC')
+        echo "运行时间记录: $TIMESTAMP" >> time.txt
+        echo "执行时长: ${MINUTES}分${SECONDS}秒 (总共${EXECUTION_TIME}秒)" >> time.txt
+        echo "---" >> time.txt
+        
+        # Display the recorded information
+        echo "脚本执行完成"
+        echo "执行时长: ${MINUTES}分${SECONDS}秒"
+        echo "记录已保存到 time.txt"
+        
+        # Configure git and commit the changes
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add and commit the time.txt file
+        git add time.txt
+        if git diff --staged --quiet; then
+          echo "没有变化需要提交"
+        else
+          git commit -m "记录运行时间: $TIMESTAMP (执行时长: ${MINUTES}分${SECONDS}秒)"
+          git push
+        fi
         
        
     - name: Save pip cache
