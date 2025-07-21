@@ -28,8 +28,9 @@ def check_url_status(page, url):
         page.goto(url)
         time.sleep(10)
         try:
+           page.get_by_text("This app has gone to sleep").click()
            page.get_by_test_id("wakeup-button-viewer").click()
-           print(f" {url} is stop , will restart!")
+           print(" {url} is stop , will restart")
            sys.stdout.flush()
            List.append(f" {url} is stop , will restart!")
         except Exception:
