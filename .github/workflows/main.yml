@@ -17,6 +17,10 @@ on:
         required: true
         type: string
 
+# Add permissions for the GITHUB_TOKEN
+permissions:
+  contents: write
+
 jobs:
   keepalive:
     runs-on: ubuntu-22.04
@@ -120,9 +124,12 @@ jobs:
         echo "执行时长: ${MINUTES}分${SECONDS}秒"
         echo "记录已保存到 time.txt"
         
-        # Configure git and commit the changes
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        # Configure git with token authentication
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # Set up token authentication
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
         
         # Add and commit the time.txt file
         git add time.txt
@@ -130,7 +137,7 @@ jobs:
           echo "没有变化需要提交"
         else
           git commit -m "记录运行时间: $TIMESTAMP (执行时长: ${MINUTES}分${SECONDS}秒)"
-          git push
+          git push origin HEAD:${{ github.ref }}
         fi
         
        
