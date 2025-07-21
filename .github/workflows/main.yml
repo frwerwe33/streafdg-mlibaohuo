@@ -2,7 +2,20 @@ name: strea-Keepalive
 on:
   schedule:
     - cron: '0 * * * *'  # Run every hour
-  workflow_dispatch:  # Manual trigger option
+  workflow_dispatch:
+    inputs:
+      website_url:
+        description: '被检查网站的URL'
+        required: true
+        type: string
+      status_code:
+        description: '从网站获取的状态码'
+        required: true
+        type: string
+      timestamp:
+        description: '检查发生时的时间戳'
+        required: true
+        type: string
 
 jobs:
   keepalive:
