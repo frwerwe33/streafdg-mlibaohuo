@@ -3,7 +3,7 @@ import random
 import sys
 import json
 import os
-
+import time
 try:
     from sendNotify import send
 except ImportError:
@@ -26,6 +26,7 @@ def load_cookies(page, filename):
 def check_url_status(page, url):
     try:
         page.goto(url)
+        time.sleep(10)
         try:
            page.get_by_test_id("wakeup-button-viewer").click()
            print(" {url} is stop , will restart")
