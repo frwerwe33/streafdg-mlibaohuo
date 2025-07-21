@@ -27,10 +27,10 @@ def check_url_status(page, url):
     try:
         page.goto(url)
         try:
-            page.get_by_test_id("wakeup").click()
-            print(f"{url} - stop , will restart")
-            sys.stdout.flush()
-            List.append(f"{url} - streamlit is stopped, will restart!")
+           page.get_by_test_id("wakeup-button-viewer").click()
+           print("stop , will restart")
+           sys.stdout.flush()
+           List.append(f"streamlit is stop , will restart!")
         except Exception:
             print(f"{url} - app is running")
             sys.stdout.flush()
